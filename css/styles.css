@@ -1128,8 +1128,7 @@ main {
   padding: 12px 0;
   border-top: 1px solid var(--border-color);
   background-color: rgba(0, 0, 0, 0.02);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
-  margin: 16px -24px -24px -24px;
+  margin: 16px -24px 0 -24px;
 }
 
 .toggle-switch {
@@ -1192,6 +1191,33 @@ input:checked + .toggle-slider:before {
   user-select: none;
   min-width: 40px;
   text-align: center;
+}
+
+.date-quick-actions {
+  display: flex;
+  justify-content: center;
+  padding: 8px 24px 16px 24px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  margin: 0 -24px -24px -24px;
+}
+
+.date-quick-btn {
+  width: 100%;
+  padding: 8px 16px;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.date-quick-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {

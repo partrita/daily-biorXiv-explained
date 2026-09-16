@@ -7,7 +7,7 @@ let urlAuthorParam = null; // URL 파라미터에서 가져온 author
 let urlKeywordsParam = null; // URL 파라미터에서 가져온 keywords
 let paperData = {};
 let flatpickrInstance = null;
-let isRangeMode = false;
+let isRangeMode = true;
 let activeKeywords = []; // 활성화된 키워드 저장
 let userKeywords = []; // 사용자 키워드 저장
 let activeAuthors = []; // 활성화된 저자 저장
@@ -385,7 +385,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   fetchAvailableDates().then(() => {
     if (availableDates.length > 0) {
-      loadPapersByDate(availableDates[0]);
+      const oldestDate = availableDates[availableDates.length - 1];
+      const latestDate = availableDates[0];
+      loadPapersByDateRange(oldestDate, latestDate);
     }
   });
 });
@@ -427,6 +429,18 @@ function initEventListeners() {
   });
 
   document.getElementById('dateRangeMode').addEventListener('change', toggleRangeMode);
+  
+  const viewAllBtn = document.getElementById('viewAllDatesBtn');
+  if (viewAllBtn) {
+    viewAllBtn.addEventListener('click', () => {
+      if (availableDates.length > 0) {
+        const oldestDate = availableDates[availableDates.length - 1];
+        const latestDate = availableDates[0];
+        loadPapersByDateRange(oldestDate, latestDate);
+        toggleDatePicker();
+      }
+    });
+  }
   
   // 기타 기존 이벤트 리스너
   document.getElementById('closeModal').addEventListener('click', closeModal);
@@ -737,19 +751,23 @@ function initDatePicker() {
     enabledDatesMap[date] = true;
   });
   
+  const minDate = availableDates.length > 0 ? availableDates[availableDates.length - 1] : undefined;
+  const maxDate = availableDates.length > 0 ? availableDates[0] : undefined;
+
   // Flatpickr 설정
   flatpickrInstance = flatpickr(datepickerInput, {
     inline: true,
     dateFormat: "Y-m-d",
-    defaultDate: availableDates[0],
+    mode: isRangeMode ? "range" : "single",
+    defaultDate: isRangeMode && availableDates.length > 1
+      ? [minDate, maxDate]
+      : maxDate,
     enable: [
       function(date) {
-        // 유효한 날짜만 활성화
         const dateStr = date.getFullYear() + "-" +
                         String(date.getMonth() + 1).padStart(2, '0') + "-" +
                         String(date.getDate()).padStart(2, '0');
-        // availableDates[0] 이후 날짜는 모두 false 반환, 그 외에는 true 반환
-        return dateStr <= availableDates[0];
+        return !!enabledDatesMap[dateStr];
       }
     ],
     onChange: function(selectedDates, dateStr) {
@@ -762,10 +780,8 @@ function initDatePicker() {
       } else if (!isRangeMode && selectedDates.length === 1) {
         // 단일 날짜 선택 처리
         const selectedDate = formatDateForAPI(selectedDates[0]);
-        // if (availableDates.includes(selectedDate)) {
-          loadPapersByDate(selectedDate);
-          toggleDatePicker();
-        // }
+        loadPapersByDate(selectedDate);
+        toggleDatePicker();
       }
     }
   });
@@ -1108,11 +1124,18 @@ function renderPapers() {
     p.matchReason = undefined;
   });
 
+  // 최신 날짜 우선 정렬 헬퍼
+  const sortByDateDesc = (a, b) => {
+    const dateComp = (b.date || '').localeCompare(a.date || '');
+    if (dateComp !== 0) return dateComp;
+    return (b.id || '').localeCompare(a.id || '');
+  };
+
   // 텍스트 검색 우선: 텍스트가 있을 때 키워드/저자처럼 숨기지 않고 정렬만 수행
   if (textSearchQuery && textSearchQuery.trim().length > 0) {
     const q = textSearchQuery.toLowerCase();
 
-    // 정렬: 일치하는 항목 우선 배치
+    // 정렬: 일치하는 항목 우선 배치, 그 내에서는 최신순 정렬
     filteredPapers.sort((a, b) => {
       const hayA = [
         a.title,
@@ -1140,7 +1163,7 @@ function renderPapers() {
       const bm = hayB.includes(q);
       if (am && !bm) return -1;
       if (!am && bm) return 1;
-      return 0;
+      return sortByDateDesc(a, b);
     });
 
     // 카드 스타일 및 툴팁을 위한 일치 항목 마킹
@@ -1160,84 +1183,85 @@ function renderPapers() {
       p.isMatched = matched;
       p.matchReason = matched ? [`텍스트: ${textSearchQuery}`] : undefined;
     });
-  } else {
+  } else if (activeKeywords.length > 0 || activeAuthors.length > 0) {
     // 키워드 및 저자 일치(필터링 없이 정렬만 수행)
-    if (activeKeywords.length > 0 || activeAuthors.length > 0) {
-      // 논문 정렬: 일치하는 논문을 앞쪽에 배치
-      filteredPapers.sort((a, b) => {
-        const aMatchesKeyword = activeKeywords.length > 0 ? 
-          activeKeywords.some(keyword => {
-            // 제목과 초록에서만 키워드 검색
-            const searchText = `${a.title} ${a.summary}`.toLowerCase();
-            return searchText.includes(keyword.toLowerCase());
-          }) : false;
-          
-        const aMatchesAuthor = activeAuthors.length > 0 ?
-          activeAuthors.some(author => {
-            // 저자 목록에서만 저자명 검색
-            return a.authors.toLowerCase().includes(author.toLowerCase());
-          }) : false;
-          
-        const bMatchesKeyword = activeKeywords.length > 0 ?
-          activeKeywords.some(keyword => {
-            // 제목과 초록에서만 키워드 검색
-            const searchText = `${b.title} ${b.summary}`.toLowerCase();
-            return searchText.includes(keyword.toLowerCase());
-          }) : false;
-          
-        const bMatchesAuthor = activeAuthors.length > 0 ?
-          activeAuthors.some(author => {
-            // 저자 목록에서만 저자명 검색
-            return b.authors.toLowerCase().includes(author.toLowerCase());
-          }) : false;
-      
-        // a와 b의 일치 상태 (키워드 또는 저자 일치 포함)
-        const aMatches = aMatchesKeyword || aMatchesAuthor;
-        const bMatches = bMatchesKeyword || bMatchesAuthor;
+    // 논문 정렬: 일치하는 논문을 앞쪽에 배치, 그 내에서는 최신순 정렬
+    filteredPapers.sort((a, b) => {
+      const aMatchesKeyword = activeKeywords.length > 0 ? 
+        activeKeywords.some(keyword => {
+          // 제목과 초록에서만 키워드 검색
+          const searchText = `${a.title} ${a.summary}`.toLowerCase();
+          return searchText.includes(keyword.toLowerCase());
+        }) : false;
         
-        if (aMatches && !bMatches) return -1;
-        if (!aMatches && bMatches) return 1;
-        return 0;
-      });
-      
-      // 일치하는 논문 마킹
-      filteredPapers.forEach(paper => {
-        const matchesKeyword = activeKeywords.length > 0 ?
-          activeKeywords.some(keyword => {
-            const searchText = `${paper.title} ${paper.summary}`.toLowerCase();
-            return searchText.includes(keyword.toLowerCase());
-          }) : false;
-          
-        const matchesAuthor = activeAuthors.length > 0 ?
-          activeAuthors.some(author => {
-            return paper.authors.toLowerCase().includes(author.toLowerCase());
-          }) : false;
-          
-        // 일치 마크 추가 (전체 논문 카드 하이라이트용)
-        paper.isMatched = matchesKeyword || matchesAuthor;
+      const aMatchesAuthor = activeAuthors.length > 0 ?
+        activeAuthors.some(author => {
+          // 저자 목록에서만 저자명 검색
+          return a.authors.toLowerCase().includes(author.toLowerCase());
+        }) : false;
         
-        // 일치 사유 추가 (일치 안내 툴팁 표시용)
-        if (paper.isMatched) {
-          paper.matchReason = [];
-          if (matchesKeyword) {
-            const matchedKeywords = activeKeywords.filter(keyword => 
-              `${paper.title} ${paper.summary}`.toLowerCase().includes(keyword.toLowerCase())
-            );
-            if (matchedKeywords.length > 0) {
-              paper.matchReason.push(`키워드: ${matchedKeywords.join(', ')}`);
-            }
-          }
-          if (matchesAuthor) {
-            const matchedAuthors = activeAuthors.filter(author => 
-              paper.authors.toLowerCase().includes(author.toLowerCase())
-            );
-            if (matchedAuthors.length > 0) {
-              paper.matchReason.push(`저자: ${matchedAuthors.join(', ')}`);
-            }
+      const bMatchesKeyword = activeKeywords.length > 0 ?
+        activeKeywords.some(keyword => {
+          // 제목과 초록에서만 키워드 검색
+          const searchText = `${b.title} ${b.summary}`.toLowerCase();
+          return searchText.includes(keyword.toLowerCase());
+        }) : false;
+        
+      const bMatchesAuthor = activeAuthors.length > 0 ?
+        activeAuthors.some(author => {
+          // 저자 목록에서만 저자명 검색
+          return b.authors.toLowerCase().includes(author.toLowerCase());
+        }) : false;
+    
+      // a와 b의 일치 상태 (키워드 또는 저자 일치 포함)
+      const aMatches = aMatchesKeyword || aMatchesAuthor;
+      const bMatches = bMatchesKeyword || bMatchesAuthor;
+      
+      if (aMatches && !bMatches) return -1;
+      if (!aMatches && bMatches) return 1;
+      return sortByDateDesc(a, b);
+    });
+    
+    // 일치하는 논문 마킹
+    filteredPapers.forEach(paper => {
+      const matchesKeyword = activeKeywords.length > 0 ?
+        activeKeywords.some(keyword => {
+          const searchText = `${paper.title} ${paper.summary}`.toLowerCase();
+          return searchText.includes(keyword.toLowerCase());
+        }) : false;
+        
+      const matchesAuthor = activeAuthors.length > 0 ?
+        activeAuthors.some(author => {
+          return paper.authors.toLowerCase().includes(author.toLowerCase());
+        }) : false;
+        
+      // 일치 마크 추가 (전체 논문 카드 하이라이트용)
+      paper.isMatched = matchesKeyword || matchesAuthor;
+      
+      // 일치 사유 추가 (일치 안내 툴팁 표시용)
+      if (paper.isMatched) {
+        paper.matchReason = [];
+        if (matchesKeyword) {
+          const matchedKeywords = activeKeywords.filter(keyword => 
+            `${paper.title} ${paper.summary}`.toLowerCase().includes(keyword.toLowerCase())
+          );
+          if (matchedKeywords.length > 0) {
+            paper.matchReason.push(`키워드: ${matchedKeywords.join(', ')}`);
           }
         }
-      });
-    }
+        if (matchesAuthor) {
+          const matchedAuthors = activeAuthors.filter(author => 
+            paper.authors.toLowerCase().includes(author.toLowerCase())
+          );
+          if (matchedAuthors.length > 0) {
+            paper.matchReason.push(`저자: ${matchedAuthors.join(', ')}`);
+          }
+        }
+      }
+    });
+  } else {
+    // 기본 최신순 정렬
+    filteredPapers.sort(sortByDateDesc);
   }
   
   // 방향키 내비게이션용 현재 필터링된 논문 목록 저장
@@ -1507,9 +1531,14 @@ function toggleDatePicker() {
   if (datePicker.classList.contains('active')) {
     document.body.style.overflow = 'hidden';
     
-    // 최신 사용 가능한 날짜를 반영하도록 날짜 선택기 재초기화
+    // 현재 선택된 날짜를 반영하도록 날짜 선택기 동기화
     if (flatpickrInstance) {
-      flatpickrInstance.setDate(currentDate, false);
+      if (currentDate.includes(' to ')) {
+        const [s, e] = currentDate.split(' to ');
+        flatpickrInstance.setDate([s, e], false);
+      } else if (currentDate) {
+        flatpickrInstance.setDate(currentDate, false);
+      }
     }
   } else {
     document.body.style.overflow = '';
@@ -1530,18 +1559,31 @@ async function loadPapersByDateRange(startDate, endDate) {
   const normalizedStartDate = startDate <= endDate ? startDate : endDate;
   const normalizedEndDate = startDate <= endDate ? endDate : startDate;
 
-  // 날짜 범위 내의 모든 유효한 날짜 가져오기
+  // 날짜 범위 내의 모든 유효한 날짜 가져오기 (availableDates는 내림차순 정렬되어 있으므로 validDatesInRange도 최신순 유지)
   const validDatesInRange = availableDates.filter(date => {
     return date >= normalizedStartDate && date <= normalizedEndDate;
   });
   
   if (validDatesInRange.length === 0) {
-    alert('No available papers in the selected date range.');
+    alert('선택한 날짜 범위에 사용 가능한 논문이 없습니다.');
     return;
   }
   
-  currentDate = `${normalizedStartDate} to ${normalizedEndDate}`;
-  document.getElementById('currentDate').textContent = `${formatDate(normalizedStartDate)} - ${formatDate(normalizedEndDate)}`;
+  if (normalizedStartDate === normalizedEndDate) {
+    currentDate = normalizedStartDate;
+    document.getElementById('currentDate').textContent = formatDate(normalizedStartDate);
+  } else {
+    currentDate = `${normalizedStartDate} to ${normalizedEndDate}`;
+    document.getElementById('currentDate').textContent = `${formatDate(normalizedStartDate)} - ${formatDate(normalizedEndDate)}`;
+  }
+
+  if (flatpickrInstance) {
+    if (normalizedStartDate === normalizedEndDate) {
+      flatpickrInstance.setDate(normalizedStartDate, false);
+    } else {
+      flatpickrInstance.setDate([normalizedStartDate, normalizedEndDate], false);
+    }
+  }
   
   // 활성화된 키워드 및 저자를 재설정하지 않음
   // 대신 현재 선택 상태 유지
@@ -1550,30 +1592,40 @@ async function loadPapersByDateRange(startDate, endDate) {
   container.innerHTML = `
     <div class="loading-container">
       <div class="loading-spinner"></div>
-      <p>Loading papers from ${formatDate(normalizedStartDate)} to ${formatDate(normalizedEndDate)}...</p>
+      <p>논문 데이터를 불러오는 중...</p>
     </div>
   `;
   
   try {
-    // 모든 날짜의 논문 데이터 로드
+    // 모든 날짜의 논문 데이터 병렬 로드
     const allPaperData = {};
     
-    for (const date of validDatesInRange) {
-      const selectedLanguage = selectLanguageForDate(date);
-      // data 브랜치에서 데이터 파일 가져오기
-      const dataUrl = DATA_CONFIG.getDataUrl(`data/${date}_AI_enhanced_${selectedLanguage}.jsonl`);
-      const response = await fetch(dataUrl);
-      const text = await response.text();
-      const dataPapers = parseJsonlData(text, date);
-      
-      // 데이터 병합
+    const fetchPromises = validDatesInRange.map(async (date) => {
+      try {
+        const selectedLanguage = selectLanguageForDate(date);
+        const dataUrl = DATA_CONFIG.getDataUrl(`data/${date}_AI_enhanced_${selectedLanguage}.jsonl`);
+        const response = await fetch(dataUrl);
+        if (!response.ok) return { date, papers: {} };
+        const text = await response.text();
+        if (!text || text.trim() === '') return { date, papers: {} };
+        return { date, papers: parseJsonlData(text, date) };
+      } catch (e) {
+        console.error(`논문 데이터 로드 실패 (${date}):`, e);
+        return { date, papers: {} };
+      }
+    });
+
+    const results = await Promise.all(fetchPromises);
+    
+    // validDatesInRange 순서(최신 날짜 우선)대로 병합
+    results.forEach(({ date, papers: dataPapers }) => {
       Object.keys(dataPapers).forEach(category => {
         if (!allPaperData[category]) {
           allPaperData[category] = [];
         }
         allPaperData[category] = allPaperData[category].concat(dataPapers[category]);
       });
-    }
+    });
     
     paperData = allPaperData;
 

@@ -2,7 +2,7 @@ let currentDate = '';
 let availableDates = [];
 let paperData = {};
 let flatpickrInstance = null;
-let isRangeMode = false;
+let isRangeMode = true;
 let allPapersData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   fetchAvailableDates().then(() => {
     if (availableDates.length > 0) {
-      loadPapersByDateRange(availableDates[0], availableDates[0]);
+      loadPapersByDateRange(availableDates[availableDates.length - 1], availableDates[0]);
     }
   });
 });
@@ -60,9 +60,14 @@ function toggleDatePicker() {
   if (datePicker.classList.contains('active')) {
     document.body.style.overflow = 'hidden';
     
-    // 최신 사용 가능한 날짜를 반영하도록 날짜 선택기 재초기화
+    // 현재 선택된 날짜/기간을 반영하도록 날짜 선택기 동기화
     if (flatpickrInstance) {
-      flatpickrInstance.setDate(currentDate, false);
+      if (currentDate.includes(' - ')) {
+        const [s, e] = currentDate.split(' - ');
+        flatpickrInstance.setDate([s, e], false);
+      } else if (currentDate) {
+        flatpickrInstance.setDate(currentDate, false);
+      }
     }
   } else {
     document.body.style.overflow = '';
@@ -92,6 +97,18 @@ function initEventListeners() {
   });
   
   document.getElementById('dateRangeMode').addEventListener('change', toggleRangeMode);
+  
+  const viewAllBtn = document.getElementById('viewAllDatesBtn');
+  if (viewAllBtn) {
+    viewAllBtn.addEventListener('click', () => {
+      if (availableDates.length > 0) {
+        const oldestDate = availableDates[availableDates.length - 1];
+        const latestDate = availableDates[0];
+        loadPapersByDateRange(oldestDate, latestDate);
+        toggleDatePicker();
+      }
+    });
+  }
   
   // 사이드바 닫기 버튼 이벤트 추가
   const closeButton = document.querySelector('.close-sidebar');
@@ -199,15 +216,20 @@ function initDatePicker() {
   availableDates.forEach(date => {
     enabledDatesMap[date] = true;
   });
+
+  const minDate = availableDates.length > 0 ? availableDates[availableDates.length - 1] : undefined;
+  const maxDate = availableDates.length > 0 ? availableDates[0] : undefined;
   
   // Flatpickr 설정
   flatpickrInstance = flatpickr(datepickerInput, {
     inline: true,
     dateFormat: "Y-m-d",
-    defaultDate: availableDates[0],
+    mode: isRangeMode ? "range" : "single",
+    defaultDate: isRangeMode && availableDates.length > 1
+      ? [minDate, maxDate]
+      : maxDate,
     enable: [
       function(date) {
-        // 유효한 날짜만 활성화
         const dateStr = date.getFullYear() + "-" + 
                         String(date.getMonth() + 1).padStart(2, '0') + "-" + 
                         String(date.getDate()).padStart(2, '0');
@@ -254,9 +276,12 @@ function toggleRangeMode() {
 }
 
 async function loadPapersByDateRange(startDate, endDate) {
-  // 날짜 범위 내의 모든 유효한 날짜 가져오기
+  const normalizedStartDate = startDate <= endDate ? startDate : endDate;
+  const normalizedEndDate = startDate <= endDate ? endDate : startDate;
+
+  // 날짜 범위 내의 모든 유효한 날짜 가져오기 (availableDates는 내림차순 정렬)
   const validDatesInRange = availableDates.filter(date => {
-    return date >= startDate && date <= endDate;
+    return date >= normalizedStartDate && date <= normalizedEndDate;
   });
   
   if (validDatesInRange.length === 0) {
@@ -264,45 +289,61 @@ async function loadPapersByDateRange(startDate, endDate) {
     return;
   }
   
-  if (startDate === endDate) {  
-    currentDate = startDate;
-    document.getElementById('currentDate').textContent = formatDate(startDate);
+  if (normalizedStartDate === normalizedEndDate) {  
+    currentDate = normalizedStartDate;
+    document.getElementById('currentDate').textContent = formatDate(normalizedStartDate);
   } else {
-    currentDate = `${startDate} - ${endDate}`;
-    document.getElementById('currentDate').textContent = `${formatDate(startDate)} - ${formatDate(endDate)}`;
+    currentDate = `${normalizedStartDate} - ${normalizedEndDate}`;
+    document.getElementById('currentDate').textContent = `${formatDate(normalizedStartDate)} - ${formatDate(normalizedEndDate)}`;
+  }
+
+  if (flatpickrInstance) {
+    if (normalizedStartDate === normalizedEndDate) {
+      flatpickrInstance.setDate(normalizedStartDate, false);
+    } else {
+      flatpickrInstance.setDate([normalizedStartDate, normalizedEndDate], false);
+    }
   }
   
   const container = document.getElementById('papersList');
   container.innerHTML = `
     <div class="loading-container">
       <div class="loading-spinner"></div>
-      <p>Loading papers from ${formatDate(startDate)} to ${formatDate(endDate)}...</p>
+      <p>Loading papers from ${formatDate(normalizedStartDate)} to ${formatDate(normalizedEndDate)}...</p>
     </div>
   `;
   
   try {
-    // 모든 날짜의 논문 데이터 로드
+    // 모든 날짜의 논문 데이터 병렬 로드
     const allPaperData = {};
     allPapersData = []; // 전역 논문 데이터 초기화
     
-    for (const date of validDatesInRange) {
-      const selectedLanguage = selectLanguageForDate(date);
-      // data 브랜치에서 데이터 파일 가져오기
-      const dataUrl = DATA_CONFIG.getDataUrl(`data/${date}_AI_enhanced_${selectedLanguage}.jsonl`);
-      const response = await fetch(dataUrl);
-      const text = await response.text();
-      const dataPapers = parseJsonlData(text, date);
-      
-      // 데이터 병합
+    const fetchPromises = validDatesInRange.map(async (date) => {
+      try {
+        const selectedLanguage = selectLanguageForDate(date);
+        const dataUrl = DATA_CONFIG.getDataUrl(`data/${date}_AI_enhanced_${selectedLanguage}.jsonl`);
+        const response = await fetch(dataUrl);
+        if (!response.ok) return { date, papers: {} };
+        const text = await response.text();
+        if (!text || text.trim() === '') return { date, papers: {} };
+        return { date, papers: parseJsonlData(text, date) };
+      } catch (e) {
+        console.error(`Error loading data for ${date}:`, e);
+        return { date, papers: {} };
+      }
+    });
+
+    const results = await Promise.all(fetchPromises);
+    
+    results.forEach(({ date, papers: dataPapers }) => {
       Object.keys(dataPapers).forEach(category => {
         if (!allPaperData[category]) {
           allPaperData[category] = [];
         }
         allPaperData[category] = allPaperData[category].concat(dataPapers[category]);
-        // 논문을 전역 배열에 추가
         allPapersData = allPapersData.concat(dataPapers[category]);
       });
-    }
+    });
     
     paperData = allPaperData;
 
