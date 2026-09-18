@@ -6,6 +6,12 @@ import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+
+# Add ai directory to sys.path so relative imports work regardless of cwd
+AI_DIR = Path(__file__).resolve().parent
+if str(AI_DIR) not in sys.path:
+    sys.path.insert(0, str(AI_DIR))
 
 import dotenv
 import langchain_core.exceptions
@@ -21,11 +27,15 @@ from runtime import build_chat_openai_kwargs, raise_if_processing_failed
 from structure import Structure
 from tqdm import tqdm
 
-if os.path.exists(".env"):
-    dotenv.load_dotenv()
-with open("template.txt", encoding="utf-8") as f:
+env_file = AI_DIR / ".env"
+if env_file.exists():
+    dotenv.load_dotenv(env_file)
+elif Path(".env").exists():
+    dotenv.load_dotenv(".env")
+
+with open(AI_DIR / "template.txt", encoding="utf-8") as f:
     template = f.read()
-with open("system.txt", encoding="utf-8") as f:
+with open(AI_DIR / "system.txt", encoding="utf-8") as f:
     system = f.read()
 
 

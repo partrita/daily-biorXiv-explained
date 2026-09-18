@@ -12,77 +12,107 @@ This innovative tool transforms how you stay updated with arXiv papers by combin
 
 ## ✨ Key Features
 
-🎯 **Zero Infrastructure Required**
+🎯 Zero Infrastructure Required
 - Leverages GitHub Actions and Pages - no server needed
 - Completely free to deploy and use
 
-🤖 **Smart AI Summarization**
+🤖 Smart AI Summarization
 - Daily paper crawling with DeepSeek-powered summaries
 - Cost-effective: Only ~0.2 CNY per day
 
-💫 **Smart Reading Experience**
+💫 Smart Reading Experience
 - Personalized paper highlighting based on your interests
 - Cross-device compatibility (desktop & mobile)
 - Local preference storage for privacy
 - Flexible date range filtering
 
-🧩 **SKILL System**
+🧩 SKILL System
 - Plug-and-play skill modules for customizing paper filtering
 
-⚙️ **Easy Preference Export & Integration**
+⚙️ Easy Preference Export & Integration
 - One-click copy in Settings to export your keywords and authors configuration
 - Seamlessly combine exported preferences with SKILL for reproducible and shareable setups
 
 
 # How to use / 사용 가이드
 
-이 저장소를 **Fork(포크)**하여 자신만의 맞춤형 논문 수집 및 AI 요약 웹사이트를 무료로 운영할 수 있습니다.
+이 저장소를 Fork(포크)하여 자신만의 맞춤형 논문 수집 및 AI 요약 웹사이트를 무료로 운영할 수 있습니다.
 
----
 
 ## 🛠️ 포크 후 설정 가이드 (Setup Guide)
 
 ### 1단계: 저장소 포크 (Fork)
-1. 우측 상단의 **Fork** 버튼을 눌러 내 GitHub 계정으로 저장소를 복제합니다.
 
----
+1. 우측 상단의 Fork 버튼을 눌러 내 GitHub 계정으로 저장소를 복제합니다.
+
 
 ### 2단계: GitHub Variables 설정 (⭐ 중요: 검색 키워드 및 환경 설정)
-저장소 상단 **Settings ➡️ Secrets and variables ➡️ Actions ➡️ Variables 탭**으로 이동하여 **`New repository variable`** 버튼을 눌러 아래 변수들을 등록합니다:
+
+저장소 상단 Settings ➡️ Secrets and variables ➡️ Actions ➡️ Variables 탭으로 이동하여 `New repository variable` 버튼을 눌러 아래 변수들을 등록합니다:
 
 | 변수명 (Variable Name) | 필수 여부 | 설명 및 예시 |
 | :--- | :---: | :--- |
-| **`CATEGORIES`** | **필수** | **수집할 검색 키워드 목록 (쉼표 `,`로 구분)**<br>• 예시: `de novo design, antibody design, protein design`<br>• 따옴표 없이 입력하며, 각 키워드별 bioRxiv 최신 논문이 수집됩니다. |
-| **`LANGUAGE`** | **필수** | **AI 요약 언어**<br>• 기본값: `Korean` (또는 `English` 등) |
-| **`MODEL_NAME`** | **필수** | **사용할 LLM 모델명**<br>• 예시: `gemini-3.7-flash` (또는 `deepseek-chat`, `gpt-4o-mini`) |
-| **`EMAIL`** | **필수** | **GitHub Actions 커밋용 이메일** (예: `your-email@example.com`) |
-| **`NAME`** | **필수** | **GitHub Actions 커밋용 이름** (예: `your-github-username`) |
+| `CATEGORIES` | 필수 | 수집할 검색 키워드 목록 (쉼표 `,`로 구분)<br>• 예시: `de novo design, antibody design, protein design`<br>• 따옴표 없이 입력하며, 각 키워드별 bioRxiv 최신 논문이 수집됩니다. |
+| `LANGUAGE` | 필수 | AI 요약 언어<br>• 기본값: `Korean` (또는 `English` 등) |
+| `MODEL_NAME` | 필수 | 사용할 LLM 모델명<br>• 예시: `gemini-3.7-flash` (또는 `deepseek-chat`, `gpt-4o-mini`) |
+| `EMAIL` | 필수 | GitHub Actions 커밋용 이메일 (예: `your-email@example.com`) |
+| `NAME` | 필수 | GitHub Actions 커밋용 이름 (예: `your-github-username`) |
 
----
 
 ### 3단계: GitHub Secrets 설정 (API 키)
-**Settings ➡️ Secrets and variables ➡️ Actions ➡️ Secrets 탭**으로 이동하여 **`New repository secret`**을 등록합니다:
+
+Settings ➡️ Secrets and variables ➡️ Actions ➡️ Secrets 탭으로 이동하여 `New repository secret`을 등록합니다:
 
 | 시크릿명 (Secret Name) | 필수 여부 | 설명 |
 | :--- | :---: | :--- |
-| **`OPENAI_API_KEY`** | **필수** | LLM API 키 (Gemini 또는 OpenAI / DeepSeek API 키) |
-| **`OPENAI_BASE_URL`** | **선택** | OpenAI 호환 엔드포인트 URL (기본값: `https://api.openai.com/v1`, Gemini/DeepSeek 호환 URL 사용 시 설정) |
-| **`ACCESS_PASSWORD`** | **선택** | 웹페이지 비밀번호 보호 기능 (비워두면 누구나 접근 가능) |
+| `OPENAI_API_KEY` | 필수 | LLM API 키 (Gemini 또는 OpenAI / DeepSeek API 키) |
+| `OPENAI_BASE_URL` | 선택 | OpenAI 호환 엔드포인트 URL (기본값: `https://api.openai.com/v1`, Gemini/DeepSeek 호환 URL 사용 시 설정) |
+| `ACCESS_PASSWORD` | 선택 | 웹페이지 비밀번호 보호 기능 (비워두면 누구나 접근 가능) |
 
----
 
 ### 4단계: GitHub Pages 활성화
-1. 저장소 상단의 **Settings ➡️ Pages**로 이동합니다.
-2. **Build and deployment** 섹션의 **Source** 드롭다운에서 **`GitHub Actions`**를 선택합니다.
+
+1. 저장소 상단의 Settings ➡️ Pages로 이동합니다.
+2. Build and deployment 섹션의 Source 드롭다운에서 `GitHub Actions`를 선택합니다.
+
+
+### 5단계: 첫 실행 (Run Workflow)
+
+1. 저장소 상단의 Actions 탭 ➡️ `biorXiv-daily-explained`를 클릭합니다.
+2. 우측의 Run workflow 드롭다운을 열고 버튼을 누릅니다.
+3. 워크플로우가 완료되면 `https://<username>.github.io/daily-biorXiv-explained/`에서 나만의 논문 큐레이션 웹페이지를 확인할 수 있습니다. (이후 매일 지정된 시간에 자동 실행됩니다)
 
 ---
 
-### 5단계: 첫 실행 (Run Workflow)
-1. 저장소 상단의 **Actions 탭 ➡️ `biorXiv-daily-explained`**를 클릭합니다.
-2. 우측의 **Run workflow** 드롭다운을 열고 버튼을 누릅니다.
-3. 워크플로우가 완료되면 `https://<username>.github.io/daily-biorXiv-explained/`에서 나만의 논문 큐레이션 웹페이지를 확인할 수 있습니다. (이후 매일 지정된 시간에 자동 실행됩니다)
+## 📁 디렉토리 구조 (Project Structure)
+
+```text
+daily-arXiv-ai-enhanced/
+├── .github/workflows/       # GitHub Actions 자동화 워크플로우 (수집/AI요약/배포)
+├── ai/                      # AI 논문 요약 및 구조화 분석 엔진
+│   ├── enhance.py           # LLM 기반 논문 요약 생성 메인 스크립트
+│   ├── content_filter.py    # 콘텐츠 필터링
+│   ├── runtime.py           # API 호출 런타임 유틸리티
+│   ├── structure.py         # Pydantic 데이터 구조 정의
+│   └── tests/               # AI 엔진 단위 테스트
+├── daily_arxiv/             # 논문 크롤러 및 중복 확인 모듈 (Scrapy)
+│   ├── check_stats.py       # 히스토리 기반 중복 검사 및 신규 논문 필터링
+│   └── daily_arxiv/         # Scrapy 크롤러 프로젝트 (spiders/arxiv.py 등)
+├── to_md/                   # AI 요약 결과 Markdown 변환 모듈
+│   ├── convert.py           # JSONL -> Markdown 변환 스크립트
+│   └── paper_template.md    # 논문 마크다운 출력 템플릿
+├── js/                      # 웹 프론트엔드 JavaScript
+├── css/                     # 웹 프론트엔드 스타일시트
+├── assets/ & images/        # UI 리소스 및 이미지
+├── index.html               # 메인 웹페이지 (GitHub Pages)
+├── statistic.html           # 통계 페이지
+├── settings.html            # 사용자 설정 및 키워드/저자 관리 페이지
+├── login.html               # 사이트 접근 인증 페이지
+└── run.sh                   # 로컬 테스트 및 디버깅용 통합 실행 스크립트
+```
 
 # Contributors
+
 Thanks to the following special contributors for contributing code, discovering bugs, and sharing useful ideas for this project!!!
 If you find that I missed your contribution below, please feel free to contact me through email.
 <table>
