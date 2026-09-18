@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# 프로젝트 루트 디렉토리로 이동 / Switch to project root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
+
 # Local Authentication Setup Script
 # This script reads ACCESS_PASSWORD from .env and updates auth-config.js with the SHA-256 hash
 

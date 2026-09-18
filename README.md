@@ -109,7 +109,9 @@ daily-arXiv-ai-enhanced/
 │   ├── js/                  # 프론트엔드 JavaScript (app, stats, auth 등)
 │   ├── css/                 # 스타일시트 (다크/라이트 테마 등)
 │   └── assets/ & images/    # 로고, 비디오, 스크린샷 등 정적 리소스
-└── run.sh                   # 로컬 테스트 및 디버깅용 통합 실행 스크립트
+└── scripts/                 # 로컬 유틸리티 및 실행 스크립트
+    ├── run.sh               # 로컬 테스트 및 디버깅용 통합 실행 스크립트
+    └── setup-local-auth.sh  # 로컬 인증 및 비밀번호 설정 스크립트
 ```
 
 # Contributors

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# 프로젝트 루트 디렉토리로 이동 / Switch to project root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
+
 # 로컬 테스트 스크립트 / Local testing script
 # 메인 워크플로는 GitHub Actions (.github/workflows/run.yml)로 이전되었습니다
 # Main workflow has been migrated to GitHub Actions (.github/workflows/run.yml)
