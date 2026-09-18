@@ -101,13 +101,14 @@ daily-arXiv-ai-enhanced/
 ├── to_md/                   # AI 요약 결과 Markdown 변환 모듈
 │   ├── convert.py           # JSONL -> Markdown 변환 스크립트
 │   └── paper_template.md    # 논문 마크다운 출력 템플릿
-├── js/                      # 웹 프론트엔드 JavaScript
-├── css/                     # 웹 프론트엔드 스타일시트
-├── assets/ & images/        # UI 리소스 및 이미지
-├── index.html               # 메인 웹페이지 (GitHub Pages)
-├── statistic.html           # 통계 페이지
-├── settings.html            # 사용자 설정 및 키워드/저자 관리 페이지
-├── login.html               # 사이트 접근 인증 페이지
+├── web/                     # 웹 프론트엔드 (GitHub Pages 배포 대상)
+│   ├── index.html           # 메인 대시보드 웹페이지
+│   ├── statistic.html       # 트렌드 및 통계 분석 페이지
+│   ├── settings.html        # 사용자 설정 및 키워드/저자 관리 페이지
+│   ├── login.html           # 사이트 접근 인증 페이지
+│   ├── js/                  # 프론트엔드 JavaScript (app, stats, auth 등)
+│   ├── css/                 # 스타일시트 (다크/라이트 테마 등)
+│   └── assets/ & images/    # 로고, 비디오, 스크린샷 등 정적 리소스
 └── run.sh                   # 로컬 테스트 및 디버깅용 통합 실행 스크립트
 ```
 

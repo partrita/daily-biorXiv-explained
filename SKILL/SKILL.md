@@ -12,9 +12,6 @@ description: URL 요청을 통해 daily-arxiv-ai-enhanced 프로젝트에서 논
 ## 기능 설명
 URL 매개변수를 통해 JSON 형식의 arXiv 논문 데이터를 반환합니다.
 
-## 기본 저장소 URL
-https://dw-dengwei.github.io/daily-arXiv-ai-enhanced/
-
 ## URL 매개변수
 
 | 매개변수 | 설명 | 예시 |
@@ -25,7 +22,7 @@ https://dw-dengwei.github.io/daily-arXiv-ai-enhanced/
 
 ## 예시
 ```
-bash scripts/fetch.sh "https://dw-dengwei.github.io/daily-arXiv-ai-enhanced/?category=cs.CV&author=Smith&keywords=deep"
+bash scripts/fetch.sh "https://partrita.github.io/daily-arXiv-ai-enhanced/?category=cs.CV&author=Smith&keywords=deep"
 ```
 여기에서는 `fetch.sh` 스크립트를 사용하여 요청을 보내고 응답 데이터를 처리합니다. 이 스크립트는 Node.js 및 puppeteer 환경 기반이며, 설치되어 있지 않은 경우 자동 설치됩니다. JavaScript를 실행하여 최종 JSON 응답을 생성해야 하므로 wget이나 curl을 직접 사용할 수 없습니다.
 

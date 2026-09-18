@@ -41,19 +41,19 @@ else
 fi
 
 # Backup original auth-config.js if it exists and hasn't been backed up yet
-if [ -f "js/auth-config.js" ] && [ ! -f "js/auth-config.js.backup" ]; then
-    cp js/auth-config.js js/auth-config.js.backup
+if [ -f "web/js/auth-config.js" ] && [ ! -f "web/js/auth-config.js.backup" ]; then
+    cp web/js/auth-config.js web/js/auth-config.js.backup
     echo "📦 Backed up original auth-config.js"
 fi
 
 # Update auth-config.js with the generated hash
-if [ -f "js/auth-config.js" ]; then
+if [ -f "web/js/auth-config.js" ]; then
     # Replace PLACEHOLDER_PASSWORD_HASH with actual hash
-    sed -i.tmp "s/passwordHash: '.*'/passwordHash: '$PASSWORD_HASH'/" js/auth-config.js
-    rm -f js/auth-config.js.tmp
-    echo "✅ Updated js/auth-config.js with password hash"
+    sed -i.tmp "s/passwordHash: '.*'/passwordHash: '$PASSWORD_HASH'/" web/js/auth-config.js
+    rm -f web/js/auth-config.js.tmp
+    echo "✅ Updated web/js/auth-config.js with password hash"
 else
-    echo "❌ Error: js/auth-config.js not found!"
+    echo "❌ Error: web/js/auth-config.js not found!"
     exit 1
 fi
 
@@ -62,10 +62,10 @@ echo "🎉 Local authentication setup complete!"
 echo ""
 echo "📝 Summary:"
 echo "  - Password hash: ${PASSWORD_HASH:0:16}..."
-echo "  - Config file: js/auth-config.js"
+echo "  - Config file: web/js/auth-config.js"
 echo ""
 echo "💡 Tips:"
-echo "  - Open login.html in browser to test"
+echo "  - Open web/login.html in browser to test"
 echo "  - Use password from .env to login"
 echo "  - auth-config.js is gitignored and won't be committed"
 echo ""
