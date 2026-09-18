@@ -23,6 +23,19 @@ jobs:
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv sync
         
+    - name: Fetch historical data from data branch
+      run: |
+        echo "과거 논문 데이터 가져오는 중... / Fetching historical paper data from data branch..."
+        mkdir -p data assets
+        if git ls-remote --heads origin data | grep -q data; then
+          git fetch origin data:data_history || true
+          git checkout data_history -- data/ assets/file-list.txt 2>/dev/null || true
+          git reset HEAD data/ assets/file-list.txt 2>/dev/null || true
+          echo "✅ 과거 데이터 로드 완료 / Successfully loaded historical data"
+        else
+          echo "ℹ️ data 브랜치가 아직 없습니다 / data branch does not exist yet"
+        fi
+
     - name: Crawl arXiv papers
       id: crawl_step
       run: |

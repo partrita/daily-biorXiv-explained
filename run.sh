@@ -63,6 +63,21 @@ echo "로컬 테스트: $today 의 arXiv 논문 크롤링 중... / Local test: C
 # 1단계: 데이터 크롤링 / Step 1: Crawl data
 echo "1단계: 크롤링 시작... / Step 1: Starting crawl..."
 
+# data 디렉토리 준비 및 과거 데이터 로드 / Prepare data directory and load history
+mkdir -p data assets
+if [ -z "$(ls -A data/*.jsonl 2>/dev/null)" ]; then
+    if git show-ref --verify --quiet refs/heads/data; then
+        echo "📂 로컬 data 브랜치에서 과거 데이터 복사 중... / Copying history from local data branch..."
+        git checkout data -- data/ assets/file-list.txt 2>/dev/null || true
+        git reset HEAD data/ assets/file-list.txt 2>/dev/null || true
+    elif git ls-remote --heads origin data 2>/dev/null | grep -q data; then
+        echo "📂 원격 data 브랜치에서 과거 데이터 복사 중... / Copying history from remote data branch..."
+        git fetch origin data:data_history 2>/dev/null || true
+        git checkout data_history -- data/ assets/file-list.txt 2>/dev/null || true
+        git reset HEAD data/ assets/file-list.txt 2>/dev/null || true
+    fi
+fi
+
 # 오늘 파일이 이미 존재하는지 확인 후 삭제 / Check if today's file exists, delete if found
 if [ -f "data/${today}.jsonl" ]; then
     echo "🗑️ 오늘의 기존 파일이 발견되어 새로 생성하기 위해 삭제합니다... / Found existing today's file, deleting for fresh start..."
