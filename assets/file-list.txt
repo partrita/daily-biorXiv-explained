@@ -74,3 +74,5 @@
 2026-11-17_AI_enhanced_Korean.jsonl
 2026-11-19.jsonl
 2026-11-19_AI_enhanced_Korean.jsonl
+2026-11-20.jsonl
+2026-11-20_AI_enhanced_Korean.jsonl
